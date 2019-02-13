@@ -43,4 +43,7 @@ class ImageService {
   }
 }
 
-module.exports = ImageService;
+module.exports = {
+  ImageService,
+  imageSvc: new ImageService(),
+};

@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const express = require('express');
-const easyvk = require('easyvk');
 const { interval: RxInterval$ } = require('rxjs');
 
 const app = express();
@@ -15,14 +14,28 @@ const {
 } = require('./lib/constants');
 
 // services
-const { imageService } = require('./services');
+const {
+  imageSvc,
+  wallSvc,
+  sessionSvc,
+} = require('./services');
 
 app.listen(port, serve);
 
 async function serve() {
   try {
-    const image = await imageService.readImageByPath(`${__dirname}/assets/${inputCoverName}`);
-    const newCoverName = await imageService.createCover(image);
+    await sessionSvc.login({
+      // access_token: process.env.ACCESS_TOKEN,
+      username: process.env.USERNAME,
+      password: process.env.PASSWORD,
+    });
+
+    // const image = await imageSvc.readImageByPath(`${__dirname}/assets/${inputCoverName}`);
+    // const newCoverName = await imageSvc.createCover(image);
+
+    const { vkr: vkposts } = await wallSvc.getPosts();
+    console.log(vkposts.items[0]);
+    console.log(vkposts.items[0].comments);
 
     // await updatePhoto(newCoverName);
 
@@ -34,14 +47,9 @@ async function serve() {
 
 
 async function updatePhoto(newCoverName) {
-  const vk = await easyvk({
-    access_token: process.env.ACCESS_TOKEN,
-    save_session: true,
-  });
+  const fileData = await uploadPhoto(sessionSvc.vk, newCoverName);
 
-  const fileData = await uploadPhoto(vk, newCoverName);
-
-  return vk.call('photos.saveOwnerCoverPhoto', fileData);
+  return sessionSvc.vk.call('photos.saveOwnerCoverPhoto', fileData);
 }
 
 async function uploadPhoto({ uploader }, newCoverName) {

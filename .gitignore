@@ -1,5 +1,6 @@
 # Dependency directories
 node_modules/
-
+covers/*
 # system
 .env
+.DS_Store

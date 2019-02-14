@@ -30,12 +30,19 @@ async function serve() {
       password: process.env.PASSWORD,
     });
 
+    const user = await sessionSvc.getUserById(60833780);
+    const photo = await imageSvc.fetchUserPhoto(user.photo_100);
+    console.log(photo);
+
     // const image = await imageSvc.readImageByPath(`${__dirname}/assets/${inputCoverName}`);
     // const newCoverName = await imageSvc.createCover(image);
 
-    const { vkr: vkposts } = await wallSvc.getPosts();
-    console.log(vkposts.items[0]);
-    console.log(vkposts.items[0].comments);
+    // const { vkr: vkposts } = await wallSvc.getPosts();
+
+    // const likedIds = await wallSvc.getLikesByPostId(5144883, 100);
+    // const commentedIds = await wallSvc.getCommentsByPostId(5144883, 100)
+    console.log(likedIds.length)
+    console.log(commentedIds.length)
 
     // await updatePhoto(newCoverName);
 

@@ -1,5 +1,6 @@
 const fs = require('fs');
-const { createCanvas, loadImage } = require('canvas');
+const fetch = require('node-fetch');
+const { createCanvas, loadImage, Image } = require('canvas');
 
 const { outputCoverName } = require('./../lib/constants');
 const Helpers = require('./../lib/helpers');
@@ -20,6 +21,14 @@ class ImageService {
 
   async readImageByPath(path) {
     return await loadImage(path);
+  }
+
+  async fetchUserPhoto(url) {
+    const res = await fetch(url);
+    const img = new Image();
+    img.src = await res.buffer();
+
+    return img;
   }
 
   saveImageToDisk() {

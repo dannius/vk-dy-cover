@@ -11,11 +11,11 @@ class WallService {
   }
 
   async getLikesByPostId(postId, count = 100) {
-    return await this.getRecursiveLikedUserIds(postId, count);
+    return await this.getRecursiveLikedUserIds(postId, count) || [];
   }
 
   async getCommentsByPostId(postId, count = 100) {
-    return await this.getRecursiveCommentedUserIds(postId, count);
+    return await this.getRecursiveCommentedUserIds(postId, count) || [];
   }
 
   async getRecursiveLikedUserIds(postId, count, ids = [], offset = 0) {

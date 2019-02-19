@@ -4,7 +4,6 @@ class EventService {
   }
 
   getWinnerIdFromIds(ids) {
-    // { id: counter, id: counter... }
     const idCounterObj = {};
     ids.forEach((id) => idCounterObj[id] ? idCounterObj[id]++ : idCounterObj[id] = 1);
 

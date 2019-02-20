@@ -22,6 +22,10 @@ const {
   eventSvc,
 } = require('./services');
 
+const Helpers = require('./lib/helpers');
+
+let weeklyPhotoName = '';
+
 app.listen(port, serve);
 
 async function serve() {
@@ -41,29 +45,17 @@ async function run() {
       password: process.env.PASSWORD,
     });
 
-    // get posts
-    const postIds = await wallSvc.getPostIds(2);
-
-    // get winner object like { id: '151476044', counter: 10 }
-    const winner = await getWinnerByPosts(postIds);
-    console.log(winner);
-
-    // get user and his photo
-    const { first_name, last_name, photo_100 } = await sessionSvc.getUserById(winner.id);
-    const photo = await imageSvc.fetchUserPhoto(photo_100);
-
-    const photoParams = {
-      photo,
-      text: `${first_name} ${last_name}`,
+    if (Helpers.isFriday()) {
+      console.log('its Friday, party time!')
+      weeklyPhotoName = await getWeeklyPhoto();
+      await Helpers.delay(1000);
     }
 
-    // read input image
-    const image = await imageSvc.readImageByPath(`${__dirname}/assets/${inputCoverName}`);
-    const newCoverName = await imageSvc.createCover(image, photoParams);
+    const newCoverName = await getDailyPhoto();
 
-    // await updatePhoto(newCoverName);
+    await updatePhoto(newCoverName);
 
-    console.log('cover was updated');
+    console.log('cover was updated. \n');
   } catch (err) {
     console.log(`Error: ${err}`);
   }
@@ -91,12 +83,65 @@ async function uploadPhoto({ uploader }, newCoverName) {
 
 async function getWinnerByPosts(postIds) {
   const ids = await postIds.reduce(async (userIds, postId) => {
+    const prevIds = await userIds;
+
     const postLikedIds = await wallSvc.getLikesByPostId(postId, 100);
+    await Helpers.delay(500);
     const postCommentedIds = await wallSvc.getCommentsByPostId(postId, 100);
+    await Helpers.delay(500);
     const postRepostedIds = await wallSvc.getRepostsByPostId(postId, 100);
 
-    return [...postLikedIds, ...postCommentedIds, ...postRepostedIds, ...(await userIds)];
+    return [...postLikedIds, ...postCommentedIds, ...postRepostedIds, ...prevIds];
   }, Promise.resolve([]));
 
   return eventSvc.getWinnerIdFromIds(ids);
+}
+
+
+async function getWeeklyPhoto() {
+    // get posts
+    const postIds = await wallSvc.getPostIds(7);
+
+    // get winner object like { id: '151476044', counter: 10 }
+    const winner = await getWinnerByPosts(postIds);
+    console.log(`weekly winner is ${winner.id}`);
+
+    // get user and his photo
+    const { first_name, last_name, photo_100 } = await sessionSvc.getUserById(winner.id);
+    const photo = await imageSvc.fetchUserPhoto(photo_100);
+
+    const WeeklyPhotoParams = {
+      photo,
+      x: 817,
+      y: 91,
+      text: `${first_name} ${last_name}`,
+    }
+
+    // read input image
+    const image = await imageSvc.readImageByPath(`${__dirname}/assets/${inputCoverName}`);
+    return imageSvc.createCover(image, Helpers.getWeeklyPhotoPath(), WeeklyPhotoParams);
+}
+
+async function getDailyPhoto() {
+    // get posts
+    const postIds = await wallSvc.getPostIds(2);
+
+    // get winner object like { id: '151476044', counter: 10 }
+    const winner = await getWinnerByPosts(postIds);
+    console.log(`daily winner is ${winner.id}`);
+
+    // get user and his photo
+    const { first_name, last_name, photo_100 } = await sessionSvc.getUserById(winner.id);
+    const photo = await imageSvc.fetchUserPhoto(photo_100);
+
+    const daylyPhotoParams = {
+      photo,
+      x: 817,
+      y: 229,
+      text: `${first_name} ${last_name}`,
+    }
+
+    // read input image
+    const image = await imageSvc.readImageByPath(`${__dirname}/covers/weeks/${weeklyPhotoName}`);
+    return imageSvc.createCover(image, Helpers.getDailyPhotoPath(), daylyPhotoParams);
 }

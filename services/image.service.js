@@ -2,16 +2,13 @@ const fs = require('fs');
 const fetch = require('node-fetch');
 const { createCanvas, loadImage, Image } = require('canvas');
 
-const { outputCoverName } = require('./../lib/constants');
-const Helpers = require('./../lib/helpers');
-
 class ImageService {
   constructor() {
     this.canvas = undefined;
     this.ctx = undefined;
   }
 
-  async createCover(image, params) {
+  async createCover(image, pathToSave, params) {
     this.canvas = createCanvas(image.width, image.height);
     this.ctx = this.canvas.getContext('2d');
     this.ctx.drawImage(image, 0, 0);
@@ -21,20 +18,20 @@ class ImageService {
     // draw user image
     const userCanvas = this.getUserPhotoCanvas(params.photo);
     // draw text
-    this.drawText(params.text.toUpperCase());
+    this.drawText(params.text.toUpperCase(), params.x + 125, params.y + 38);
 
-    this.ctx.drawImage(userCanvas, 766, 168);
+    this.ctx.drawImage(userCanvas, params.x, params.y);
 
-    return await this.saveImageToDisk();
+    return await this.saveImageToDisk(pathToSave);
   }
 
   getUserPhotoCanvas(photo) {
     const userCanvas = createCanvas(photo.width, photo.height);
     const ctx = userCanvas.getContext('2d');
-    const radius = 50;
+    const radius = 45;
 
     ctx.beginPath();
-    ctx.arc(50, 50, radius, 0, Math.PI * 2, true);
+    ctx.arc(45, 45, radius, 0, Math.PI * 2, true);
     ctx.closePath();
     ctx.clip();
 
@@ -55,17 +52,14 @@ class ImageService {
     return img;
   }
 
-  drawText(text) {
-    this.ctx.font = "30px Gotham Pro Narrow";
+  drawText(text, x, y) {
+    this.ctx.font = "24px Gotham Pro Narrow";
     this.ctx.fillStyle = "black";
-    this.ctx.fillText(text, 908, 210);
+    this.ctx.fillText(text, x, y);
   }
 
-  saveImageToDisk() {
-    const [ name, extension ] = outputCoverName.split('.');
-    const filename = `${name}__${Helpers.timestamp()}.${extension}`;
-
-    const output = fs.createWriteStream(`${__dirname}/../covers/${filename}`);
+  saveImageToDisk(pathToSave) {
+    const output = fs.createWriteStream(pathToSave);
 
     let stream = this.canvas.createPNGStream();
 
@@ -75,6 +69,7 @@ class ImageService {
 
     return new Promise(resolve => {
       stream.on('end', _ => {
+        const filename = pathToSave.split('/').pop();
         console.log(`photo was saved to disc: ${filename}`);
         resolve(filename);
       });

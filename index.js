@@ -104,7 +104,7 @@ async function getWeeklyPhoto() {
 
     // get winner object like { id: '151476044', counter: 10 }
     const winner = await getWinnerByPosts(postIds);
-    console.log(`weekly winner is ${winner.id}`);
+    console.log(`weekly winner is ${winner.id}, activity: ${winner.counter}`);
 
     // get user and his photo
     const { first_name, last_name, photo_100 } = await sessionSvc.getUserById(winner.id);
@@ -128,7 +128,7 @@ async function getDailyPhoto() {
 
     // get winner object like { id: '151476044', counter: 10 }
     const winner = await getWinnerByPosts(postIds);
-    console.log(`daily winner is ${winner.id}`);
+    console.log(`daily winner is ${winner.id}, activity: ${winner.counter}`);
 
     // get user and his photo
     const { first_name, last_name, photo_100 } = await sessionSvc.getUserById(winner.id);

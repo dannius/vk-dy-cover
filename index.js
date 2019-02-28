@@ -11,7 +11,7 @@ app.use("/assets", express.static('assets'));
 const {
   port,
   inputCoverName,
-  day,
+  dayMilliseconds,
 } = require('./lib/constants');
 
 // services
@@ -24,14 +24,14 @@ const {
 
 const Helpers = require('./lib/helpers');
 
-let weeklyPhotoName = '';
+let weeklyPhotoName = 'output__1551972405.jpeg';
 
 app.listen(port, serve);
 
 async function serve() {
   run();
 
-  RxInterval$(day).subscribe(() => {
+  RxInterval$(dayMilliseconds).subscribe(() => {
     run();
   })
 }
@@ -82,16 +82,18 @@ async function uploadPhoto({ uploader }, newCoverName) {
 }
 
 async function getWinnerByPosts(postIds) {
-  const ids = await postIds.reduce(async (userIds, postId) => {
+  const ids = await postIds.reduce(async (userIds, postId, i) => {
     const prevIds = await userIds;
+    console.log(`processing post ${i + 1} - id: ${postId}`)
 
     const postLikedIds = await wallSvc.getLikesByPostId(postId, 100);
+
     await Helpers.delay(500);
     const postCommentedIds = await wallSvc.getCommentsByPostId(postId, 100);
-    await Helpers.delay(500);
-    const postRepostedIds = await wallSvc.getRepostsByPostId(postId, 100);
 
-    return [...postLikedIds, ...postCommentedIds, ...postRepostedIds, ...prevIds];
+    await Helpers.delay(500);
+
+    return [...postLikedIds, ...postCommentedIds, ...prevIds];
   }, Promise.resolve([]));
 
   return eventSvc.getWinnerIdFromIds(ids);
@@ -100,8 +102,8 @@ async function getWinnerByPosts(postIds) {
 
 async function getWeeklyPhoto() {
     // get posts
-    const postIds = await wallSvc.getPostIds(7);
-
+    const postIds = await wallSvc.getWeeklyPostIds(20);
+    console.log(`this week was ${postIds.length} posts`);
     // get winner object like { id: '151476044', counter: 10 }
     const winner = await getWinnerByPosts(postIds);
     console.log(`weekly winner is ${winner.id}, activity: ${winner.counter}`);
@@ -124,7 +126,8 @@ async function getWeeklyPhoto() {
 
 async function getDailyPhoto() {
     // get posts
-    const postIds = await wallSvc.getPostIds(2);
+    const postIds = await wallSvc.getDailyPostIds(5);
+    console.log(`today was ${postIds.length} posts`);
 
     // get winner object like { id: '151476044', counter: 10 }
     const winner = await getWinnerByPosts(postIds);

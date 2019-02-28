@@ -1,15 +1,32 @@
 require('dotenv').config();
 const Helpers = require('./../lib/helpers');
+
+const { dayMilliseconds } = require('./../lib/constants');
 const { sessionSvc } = require('./session.service');
 
 class WallService {
-  async getPostIds(count = 2) {
+  async getDailyPostIds(count = 5) {
     const { vkr: vkposts } = await sessionSvc.vk.call('wall.get', {
       owner_id: `-${process.env.GROUP_ID}`,
       count,
     })
 
-    return vkposts.items.map(post => post.id);
+    return vkposts
+            .items
+            .filter(post => this.isDailyPost(post))
+            .map(post => post.id);
+  }
+
+  async getWeeklyPostIds(count = 20) {
+    const { vkr: vkposts } = await sessionSvc.vk.call('wall.get', {
+      owner_id: `-${process.env.GROUP_ID}`,
+      count,
+    })
+
+    return vkposts
+            .items
+            .filter(post => this.isWeeklyPost(post))
+            .map(post => post.id);
   }
 
   async getLikesByPostId(postId, count = 100) {
@@ -83,7 +100,21 @@ class WallService {
 
     await Helpers.delay(1000);
 
-    return this.getRecursiveCommentedUserIds(postId, count, ids, ids.length);
+    return this.getRecursiveRepostedUserIds(postId, count, ids, ids.length);
+  }
+
+  isDailyPost(post) {
+    const todayDate = new Date().getTime();
+    const postDate = post.date * 1000;
+
+    return todayDate - postDate < dayMilliseconds;
+  }
+
+  isWeeklyPost(post) {
+    const todayDate = new Date().getTime();
+    const postDate = post.date * 1000;
+
+    return todayDate - postDate < dayMilliseconds * 7;
   }
 }
 

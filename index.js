@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 
 const app = express();
+
 app.use("/covers", express.static('covers'));
 app.use("/assets", express.static('assets'));
 
@@ -36,6 +37,7 @@ const {
 
 // services
 const {
+  SocketService,
   imageSvc,
   wallSvc,
   sessionSvc,
@@ -46,14 +48,11 @@ const Helpers = require('./lib/helpers');
 
 let weeklyPhotoName = 'output__1553266293.jpeg';
 
-app.listen(port, serve);
-
-async function serve() {
-
-}
+const server = app.listen(port, () => {});
+const io = new SocketService(server);
 
 async function run() {
-  console.log(`RUN at ${new Date()}---------------`);
+  io.emit(`RUN at ${new Date()}---------------`);
   try {
     await sessionSvc.login({
       // access_token: process.env.ACCESS_TOKEN,
@@ -62,7 +61,7 @@ async function run() {
     });
 
     if (Helpers.isFriday()) {
-      console.log('its Friday, party time!')
+      io.emit('its Friday, party time!');
       weeklyPhotoName = await getWeeklyPhoto();
       await Helpers.delay(1000);
     }
@@ -71,9 +70,9 @@ async function run() {
 
     await updatePhoto(newCoverName);
 
-    console.log('cover was updated. \n');
+    io.emit('cover was updated. \n');
   } catch (err) {
-    console.log(`Error: ${err}`);
+    io.emit(`Error: ${err}`);
   }
 }
 
@@ -100,7 +99,7 @@ async function uploadPhoto({ uploader }, newCoverName) {
 async function getWinnerByPosts(postIds) {
   const ids = await postIds.reduce(async (userIds, postId, i) => {
     const prevIds = await userIds;
-    console.log(`processing post ${i + 1} - id: ${postId}`)
+    io.emit(`processing post ${i + 1} - id: ${postId}`)
 
     const postLikedIds = await wallSvc.getLikesByPostId(postId, 100);
 
@@ -119,10 +118,10 @@ async function getWinnerByPosts(postIds) {
 async function getWeeklyPhoto() {
     // get posts
     const postIds = await wallSvc.getWeeklyPostIds(20);
-    console.log(`this week was ${postIds.length} posts`);
+    io.emit(`this week was ${postIds.length} posts`);
     // get winner object like { id: '151476044', counter: 10 }
     const winner = await getWinnerByPosts(postIds);
-    console.log(`weekly winner is ${winner.id}, activity: ${winner.counter}`);
+    io.emit(`weekly winner is ${winner.id}, activity: ${winner.counter}`);
 
     // get user and his photo
     const { first_name, last_name, photo_100 } = await sessionSvc.getUserById(winner.id);
@@ -143,11 +142,11 @@ async function getWeeklyPhoto() {
 async function getDailyPhoto() {
     // get posts
     const postIds = await wallSvc.getDailyPostIds(5);
-    console.log(`today was ${postIds.length} posts`);
+    io.emit(`today was ${postIds.length} posts`);
 
     // get winner object like { id: '151476044', counter: 10 }
     const winner = await getWinnerByPosts(postIds);
-    console.log(`daily winner is ${winner.id}, activity: ${winner.counter}`);
+    io.emit(`daily winner is ${winner.id}, activity: ${winner.counter}`);
 
     // get user and his photo
     const { first_name, last_name, photo_100 } = await sessionSvc.getUserById(winner.id);

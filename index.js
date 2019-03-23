@@ -1,17 +1,37 @@
 require('dotenv').config();
 
 const express = require('express');
-const { interval: RxInterval$ } = require('rxjs');
 
 const app = express();
 app.use("/covers", express.static('covers'));
 app.use("/assets", express.static('assets'));
 
+app.use((_, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, PUT, PATCH, POST, DELETE");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
+
+// rendering html
+const path = require('path');
+app.use(express.static(__dirname + '/views'));
+app.get('/',(_, res) => {
+  res.sendFile(path.join(__dirname+'/views/main.html'));
+});
+
+app.get('/change-cover',(req, res) => {
+  if (req.query.password === 'ourgold') {
+    res.json({ message: 'process starting, cover will be updated in next minute' });
+  } else {
+    res.json({ message: 'wrong password' });
+  }
+});
+
 // settings
 const {
   port,
   inputCoverName,
-  dayMilliseconds,
 } = require('./lib/constants');
 
 // services
@@ -24,16 +44,12 @@ const {
 
 const Helpers = require('./lib/helpers');
 
-let weeklyPhotoName = 'output__1551972405.jpeg';
+let weeklyPhotoName = 'output__1553266293.jpeg';
 
 app.listen(port, serve);
 
 async function serve() {
-  run();
 
-  RxInterval$(dayMilliseconds).subscribe(() => {
-    run();
-  })
 }
 
 async function run() {
